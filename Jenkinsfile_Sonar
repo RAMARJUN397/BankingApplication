@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+    //agent any { docker { image 'maven:3.9.9-eclipse-temurin-21-alpine' } }
+     tools{
+    maven "M2VEN"
+   }
+    stages {
+        stage('SCM') {
+            steps {
+                echo 'SCM'
+                git branch: 'argroups', url: 'https://github.com/RAMARJUN397/MyWebApplication.git'
+            }
+        }
+        stage('Compile'){
+            steps{
+                bat 'mvn compile'
+                echo 'Code Successfully Compiled By Maven'
+            }
+        }
+         stage('Test'){
+            steps{
+                bat 'mvn test'
+            }
+        }
+         stage('Build'){
+            steps{
+                bat 'mvn war:war'
+            }
+        }
+        stage('QualityCheck'){
+            steps{
+                bat 'mvn sonar:sonar -Dsonar.host.url=http://localhost:9000/ -Dsonar.user=admin -Dsonar.token=squ_711a87c4f69ed4f9710a9db9b7d8b4c8e14deba8 -Dsonar.projectKey=mywebapplication -Dsonar.projectName=mywebapplication -Dsonar.sourceEncoding=UTF-8 -Dsonar.language=java -Dsonar.java.source=1.7 -Dsonar.java.target=1.7 -Dsonar.projectVersion=1.0 -Dsonar.sources=src/main/java -Dsonar.java.binaries=.'
+            }
+        }
+        stage('SMOKE Test'){
+            steps{
+                echo 'Deploying in Tomcat for Smoke test'
+                deploy adapters: [tomcat9(credentialsId: 'TOMCATCRED', path: '', url: 'http://localhost:8081/')], contextPath: 'mydev', war: '**/*.war'
+            }
+        }
+    }
+}
